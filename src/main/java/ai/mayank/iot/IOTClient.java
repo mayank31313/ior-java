@@ -16,38 +16,58 @@ import java.util.function.Function;
 public class IOTClient extends Thread{
     public Socket client;
     Gson gson = new Gson();
-    JsonReader reader;
+    //JsonReader reader;
     HttpClient httpClient;
     Integer from;
     String token;
     Integer to;
     private static String server;
-    final String serverName = "192.168.1.7";
-    //final String serverName = "localhost";
+    final String serverName = "www.iorresearch.ml";
+
+    private BufferedReader reader = null;
+    private BufferedWriter writer = null;
+
     private long time;
     private final int delay = 1000 * 60;
     private boolean log;
     private Function<SocketMessage,String> readFunction;
     private Function<Integer,HashMap<String,String>> setSyncDataFunction;
 
-    IOTClient(Integer from,Integer to,String token,boolean log) throws IOException {
+    public IOTClient(Integer from,Integer to,String token,boolean log) throws IOException {
         this.log = log;
         this.from = from;
         this.to = to;
         this.token = token;
         httpClient = HttpClients.createDefault();
-        server = String.format("http://%s:8080/IOT/dashboard/socket/subscribe/%s/%s",serverName,token,from);
+        server = String.format("http://%s/IOT/dashboard/socket/subscribe/%s/%s",serverName,token,from);
         if(!reconnect())
             throw new IOException("Could not connect to Server");
 
         this.start();
     }
+
     public void setSync(Function<Integer,HashMap<String,String>> f){
         this.setSyncDataFunction = f;
     }
+
     private boolean reconnect() throws IOException{
         HttpGet getRequest = new HttpGet(server);
         HttpResponse response = httpClient.execute(getRequest);
+        int status = response.getStatusLine().getStatusCode();
+        while(status == 404){
+            response = httpClient.execute(getRequest);
+            status = response.getStatusLine().getStatusCode();
+            try {
+                Thread.sleep(2 * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            print(String.format("Server with address: %s not found",server));
+        }
+
+        if(status != 201)
+            throw new IOException("Invalid Credentials");
+        /*
         BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
         StringBuilder sb = new StringBuilder();
         String read = "";
@@ -57,7 +77,9 @@ public class IOTClient extends Thread{
         read = sb.toString();
         print(read);
         List<DeviceElement> elements = gson.fromJson(read,ArrayList.class);
-        if(elements == null) return false;
+        if(elements == null)
+            return false;
+        */
         print("Connecting to Server on port " + 8000);
         try {
             Thread.sleep(2 * 1000);
@@ -70,6 +92,7 @@ public class IOTClient extends Thread{
         sendInitialMessage();
         return true;
     }
+
     private void sendInitialMessage() throws IOException{
         SocketMessage msg = new SocketMessage();
         msg.to = new ArrayList<>();
@@ -87,8 +110,6 @@ public class IOTClient extends Thread{
     private void sendData(HashMap<String,String> map) throws IOException{
         SocketMessage msg = new SocketMessage();
         msg.status = Status.SYNC;
-        msg.to = new ArrayList<>();
-        msg.to.add(0);
         msg.syncData = map;
         /*
         Random random = new Random();
@@ -99,14 +120,10 @@ public class IOTClient extends Thread{
     }
     private void sendHeartBeat() throws IOException{
         SocketMessage msg = new SocketMessage();
-        msg.to = new ArrayList<>();
-        msg.to.add(0000);
         msg.message = "<HEARTBEAT>";
         send(msg);
     }
     private void send(SocketMessage msg) throws IOException{
-        msg.token = token;
-        msg.from = from;
         OutputStream outToServer = client.getOutputStream();
         DataOutputStream out = new DataOutputStream(outToServer);
         print(gson.toJson(msg));
@@ -125,22 +142,11 @@ public class IOTClient extends Thread{
 
     public void sendMessage(String message) throws IOException{
         SocketMessage msg = new SocketMessage();
-        msg.from = from;
-        msg.to = new ArrayList<>(Arrays.asList(to));
         msg.message = message;
-        msg.token = token;
         msg.status = Status.Operation;
         send(msg);
     }
 
-    public SocketMessage getmessageTemplate(){
-        SocketMessage msg = new SocketMessage();
-        msg.to = new ArrayList<>();
-        msg.to.add(to);
-        msg.from = this.from;
-        msg.token = token;
-        return msg;
-    }
     public void run() {
         while(true){
             try{

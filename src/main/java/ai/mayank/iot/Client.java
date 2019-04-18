@@ -8,34 +8,11 @@ public class Client{
     static IOTClient client2;
     static long time;
     final static String token = "c7024ca7-57a2-4c89-978c-121fb8152312";
-    public static void main(String [] args) throws Exception {
-        /*
-        Integer code = 1234,to = 0;
-        String token = "4eafc05a-a049-4b1b-a989-5b431f8bdbc1";
-        //String token = "c012440f-b03d-4683-b533-15282165f2d5";
-        for(int i=0;i<args.length;i++){
-            if(args[i].equals("-from")){
-                code = Integer.parseInt(args[i+1]);
-                i++;
-            }
-            else if(args[i].equals("-token")){
-                token = args[i+1];
-                i++;
-            }
-            else if(args[i].equals("-to")){
-                to = Integer.parseInt(args[i+1]);
-                i++;
-            }
-        }
 
-        client = new IOTClient(code,to,token,true);
-        */
-        client1 = new IOTClient(555,1234,token,false);
-        //client2 = new IOTClient(555,1234,token,false);
+    public static void main(String [] args) throws Exception {
+        client1 = new IOTClient(555,1234,token,true);
         client1.setReadFunction(Client::readFunction1);
         client1.setSync(Client::sync);
-        //client2.setReadFunction(Client::readFunction2);
-        //client2.setSync(Client::sync);
 
         while(true){
             Thread.sleep(1000);
