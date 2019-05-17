@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>Socket-Client</groupId>
-    <artifactId>ai.mayank.iot.sockets</artifactId>
+    <groupId>ior-research</groupId>
+    <artifactId>ior-research.iotclient</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -51,7 +51,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>libs/</classpathPrefix>
-                            <mainClass>ai.mayank.iot.Client</mainClass>
+                            <mainClass>ai.mayank.iot.examples.Client</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
