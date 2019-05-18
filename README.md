@@ -19,24 +19,29 @@ Run the following command
 ## Usage
 
     String token = "paste your subscription key here"
-    Integer code = int("current device code here")
-    Integer to = int("Destiation device code here")
+    Integer code = //Current Device Code
+    Integer to = //Destination Device Code
 
     Long or Integer time_delay = 90 # Time delay for the heart beat (in seconds) default is 90 seconds
 
 ## Create Instance of IOT Client
 
-
-    iot = IOTClient(from = code,to=to,token=token) #Creating object for IOT Client
+    IOTClient iot = IOTClient(from = code,to=to,token=token) #Creating object for IOT Client
 
 ### Setting up Receive Function to do some Operation when a response is received.
 
-    iot.set_on_receive(lambda x: print(x))
+    iot.setReadFunction(Client::onReceive);
+
+    public static Boolean onReceive(SocketMessage msg) {
+        System.out.println("Message Received");
+        System.out.println("Message Received: " + msg.message);
+        System.out.println("Message status: " + msg.status);
+        return true;
+    }
 
 ### Last but not the least start the IOTClient
 
     iot.start()
-    iot.join() #Since IOTClient inherites Thread Class you can also use .join() function depending on your use case
 
 
 

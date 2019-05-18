@@ -18,8 +18,7 @@ public class IOTClient extends Thread{
     Gson gson = new Gson();
     private Integer from,to;
     private String token;
-    //final String serverName = "iorresearch.ml";
-    final String serverName = "localhost";
+    final String serverName = "iorresearch.ml";
 
     private BufferedReader reader = null;
     private BufferedWriter writer = null;
@@ -27,7 +26,7 @@ public class IOTClient extends Thread{
     private long time;
     private final int delay = 1000 * 60;
     private boolean log;
-    private Function<SocketMessage,String> readFunction;
+    private Function<SocketMessage,Boolean> readFunction;
 
     public IOTClient(Integer from,Integer to,String token,boolean log) throws IOException {
         this.log = log;
@@ -37,8 +36,6 @@ public class IOTClient extends Thread{
 
         if(!reconnect())
             throw new IOException("Could not connect to Server");
-
-        this.start();
     }
 
 
@@ -119,7 +116,7 @@ public class IOTClient extends Thread{
         if(log)
             System.out.println(message);
     }
-    public void setReadFunction(Function<SocketMessage,String> f){
+    public void setReadFunction(Function<SocketMessage,Boolean> f){
         this.readFunction = f;
     }
 
