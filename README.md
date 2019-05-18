@@ -14,7 +14,7 @@ This is git repository for the Java client:
 ## Installation
 Run the following command
 
-    pip install --upgrade ior-research
+    Clone this repository
 
 ## Usage
 
