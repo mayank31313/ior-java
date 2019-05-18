@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>ior-research</groupId>
-    <artifactId>ior-research.iotclient</artifactId>
+    <groupId>com.github.mayank31313</groupId>
+    <artifactId>ior_research.iotclient</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 

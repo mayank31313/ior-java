@@ -13,6 +13,9 @@ import java.net.SocketException;
 import java.util.*;
 import java.util.function.Function;
 
+/*
+This class will act as a communication channel between your devices
+ */
 public class IOTClient extends Thread{
     public Socket client;
     Gson gson = new Gson();
@@ -28,6 +31,14 @@ public class IOTClient extends Thread{
     private boolean log;
     private Function<SocketMessage,Boolean> readFunction;
 
+    /**
+     *
+     * @param from Current Device code
+     * @param to Destination Device code
+     * @param token Subscription key, you can find it in settings page
+     * @param log choose weather to log the values in CLI Screen, boolean typr.
+     * @throws IOException
+     */
     public IOTClient(Integer from,Integer to,String token,boolean log) throws IOException {
         this.log = log;
         this.from = from;
@@ -38,7 +49,11 @@ public class IOTClient extends Thread{
             throw new IOException("Could not connect to Server");
     }
 
-
+    /**
+     * Connects the client to the server
+     * @return
+     * @throws IOException
+     */
     private boolean reconnect() throws IOException{
         String server = String.format("http://%s/IOT/dashboard/socket/subscribe/%s/%d/%d",serverName,token,from,to);
         HttpClient httpClient = HttpClients.createDefault();
@@ -83,6 +98,9 @@ public class IOTClient extends Thread{
         return true;
     }
 
+    /**
+     * Close the Input and Output Streams
+     */
     public void close(){
         try {
             reader.close();
@@ -92,34 +110,67 @@ public class IOTClient extends Thread{
             e.printStackTrace();
         }
     }
+
+    /**
+     * Send Data to server including Meta-Data
+     * @param map a key-value pair Map, used to SYNC data from device to server. but it is now deprecated
+     * @throws IOException
+     */
+    @Deprecated
     private void sendData(HashMap<String,String> map) throws IOException{
         SocketMessage msg = new SocketMessage();
         msg.status = Status.SYNC;
         msg.syncData = map;
         send(msg);
     }
+
+    /**
+     * Sends the Heart Beat to the server in a duration of time
+     * @throws IOException
+     */
+    @Deprecated
     private void sendHeartBeat() throws IOException{
         SocketMessage msg = new SocketMessage();
         msg.message = "<HEARTBEAT>";
         send(msg);
     }
+
+    /**
+     * Send the socket message to the Server
+     * @param msg Socket Message, specifies the Message to be end to the server.
+     * @throws IOException
+     */
     private void send(SocketMessage msg) throws IOException{
         String data = gson.toJson(msg);
         print(data);
-        writer.write(data);
-        writer.newLine();
-        writer.flush();
-        time = System.currentTimeMillis();
-        print("Sending Message");
+        synchronized (writer) {
+            writer.write(data);
+            writer.newLine();
+            writer.flush();
+            time = System.currentTimeMillis();
+            print("Sending Message");
+        }
     }
+
+
     private void print(String message){
         if(log)
             System.out.println(message);
     }
+
+    /**
+     * Sets the function that has to be called whenever client receives a Message from server.
+     * @param f Function Object, can also be implemented using Lambda SocketMessage will be argument to function and Boolean is return type.
+     */
     public void setReadFunction(Function<SocketMessage,Boolean> f){
         this.readFunction = f;
     }
 
+    /**
+     * Sends a string message to the server.
+     * @param message holds the message value
+     * @throws IOException
+     */
     public void sendMessage(String message) throws IOException{
         SocketMessage msg = new SocketMessage();
         msg.message = message;
@@ -141,8 +192,10 @@ public class IOTClient extends Thread{
                         this.close();
                         break;
                     }
-                    if(readFunction != null)
+                    if(readFunction != null) {
                         readFunction.apply(msg);
+                        this.sendMessage("ack");
+                    }
                 }
                 if(System.currentTimeMillis() - time > delay){
                         sendHeartBeat();
@@ -162,11 +215,17 @@ public class IOTClient extends Thread{
         }
     }
 
+
+    /**
+     * Read data from the server, if exists
+     * @return SocketMessage if received else null
+     * @throws IOException
+     */
     public SocketMessage readData()throws IOException{
-        DataInputStream in = new DataInputStream(client.getInputStream());
-        if (in.available() == 0) return null;
+        if (client.getInputStream().available() == 0) return null;
         String dataString = reader.readLine();
         SocketMessage msg = gson.fromJson(dataString,SocketMessage.class);
         return msg;
     }
+
 }
