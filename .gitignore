@@ -1,5 +1,6 @@
-src/**
-IOR-Java.iml
-target/**
-!target/libs!/**
-.idea/**
+src/*
+*.iml
+target/*
+!target/libs!/*
+pom.xml.versionsBackup
+.idea/*
