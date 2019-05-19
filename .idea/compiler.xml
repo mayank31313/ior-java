@@ -8,11 +8,12 @@
         <outputRelativeToContentRoot value="true" />
         <module name="IOR-Java" />
         <module name="ior-research.iotclient" />
-        <module name="ior_research.iotclient" />
+        <module name="IORClient" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="ior-research.iotclient" target="8" />
+      <module name="ior_research.iotclient" target="8" />
     </bytecodeTargetLevel>
   </component>
 </project>

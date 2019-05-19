@@ -14,7 +14,11 @@ This is git repository for the Java client:
 ## Installation
 Run the following command
 
-    Clone this repository
+    <dependency>
+        <groupId>com.github.mayank31313</groupId>
+        <artifactId>IORClient</artifactId>
+        <version>0.3.3</version>
+    </dependency>
 
 ## Usage
 
