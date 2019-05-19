@@ -1,8 +1,7 @@
 src/*
-!src/main/java/ai/mayank/iot/examples/Client.java
 *.iml
 target/*
-!target/libs/**
+!target/libs
 !target/IORClient-0.3.3.jar
 pom.xml.versionsBackup
 .idea/*
