@@ -1,5 +1,5 @@
 src/*
-!src/ai/mayank/iot/examples/Client.java
+!src/main/java/ai/
 *.iml
 target/*
 !target/libs/**
