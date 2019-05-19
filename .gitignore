@@ -1,7 +1,7 @@
 src/*
 !src/ai/**
 *.iml
-target/
+target/*
 !target/libs/**
 !target/IORClient-0.3.3.jar
 pom.xml.versionsBackup
