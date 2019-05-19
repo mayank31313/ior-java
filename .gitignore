@@ -1,2 +1,5 @@
 src/**
 IOR-Java.iml
+target/**
+!target/libs!/**
+.idea/**

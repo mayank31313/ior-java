@@ -13,8 +13,8 @@ import java.net.SocketException;
 import java.util.*;
 import java.util.function.Function;
 
-/*
-This class will act as a communication channel between your devices
+/**
+ * Client Class for  IOR Server
  */
 public class IOTClient extends Thread{
     public Socket client;
@@ -32,7 +32,7 @@ public class IOTClient extends Thread{
     private Function<SocketMessage,Boolean> readFunction;
 
     /**
-     *
+     * Constructor for IOTClient, initialize all things that will be required in future.
      * @param from Current Device code
      * @param to Destination Device code
      * @param token Subscription key, you can find it in settings page
