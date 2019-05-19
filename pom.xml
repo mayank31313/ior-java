@@ -71,6 +71,7 @@
                         <goals>
                             <goal>jar-no-fork</goal>
                         </goals>
+                        <phase>verify</phase>
                     </execution>
                 </executions>
             </plugin>
