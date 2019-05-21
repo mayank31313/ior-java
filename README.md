@@ -22,6 +22,8 @@ Run the following command, use the following dependency to embed IORClient in yo
 
 ## Usage
 
+    import ior_research.iotclient.*;
+
     String token = "paste your subscription key here"
     Integer code = //Current Device Code
     Integer to = //Destination Device Code
