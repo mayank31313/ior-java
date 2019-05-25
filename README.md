@@ -17,7 +17,7 @@ Run the following command, use the following dependency to embed IORClient in yo
     <dependency>
         <groupId>com.github.mayank31313</groupId>
         <artifactId>IORClient</artifactId>
-        <version>0.3.5</version>
+        <version>0.3.4</version>
     </dependency>
 
 ## Usage
