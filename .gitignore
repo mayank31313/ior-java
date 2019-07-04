@@ -1,5 +1,3 @@
-src/main/*
-!src/main/java/ai
 *.iml
 target/*
 !target/libs
