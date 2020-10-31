@@ -3,14 +3,15 @@ package ior_research.iotclient;
 import com.google.gson.Gson;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 
+import java.net.SocketException;
 import java.util.*;
 import java.util.function.Function;
 
@@ -18,19 +19,29 @@ import java.util.function.Function;
  * Client Class for  IOR Server
  */
 
-public class IOTClient extends Thread{
+public class IOTClient extends Thread implements  BaseClient{
+    Logger logger = LoggerFactory.getLogger(IOTClient.class);
+
     public Socket client;
-    Gson gson = new Gson();
-    private Integer from,to;
-    private String token;
-    private final String serverName;
-    private boolean isTunneled=false;
+    protected Gson gson = new Gson();
+    protected Integer from,to;
+    protected String token;
+    protected Integer httpPort,tcpPort;
+
+    protected final String serverName;
+    protected boolean isTunneled = false;
     private BufferedReader reader = null;
     private BufferedWriter writer = null;
 
-    private final Integer delay = 1000 * 90;
+    private final Integer delay = 3000;
     private boolean log;
-    private Function<SocketMessage,Boolean> readFunction;
+    protected Function<SocketMessage,Boolean> readFunction;
+
+    public static List<IOTClient> createRevertedClients(int from,int to,String token,boolean log,String server,int httpPort,int socketPort) throws IOException{
+        IOTClient c1 = new IOTClient(from,to,token,log,server,httpPort,socketPort);
+        IOTClient c2 = new IOTClient(to,from,token,log,server,httpPort,socketPort);
+        return Arrays.asList(new IOTClient[]{c1,c2});
+    }
 
     /**
      * Constructor for IOTClient, initialize all things that will be required in future.
@@ -41,12 +52,15 @@ public class IOTClient extends Thread{
      * @param serverName specify the server address default is iorresearch.ml
      * @throws IOException
      */
-    public IOTClient(Integer from,Integer to,String token,boolean log,String serverName) throws IOException{
+
+    public IOTClient(Integer from,Integer to,String token,boolean log,String serverName,Integer httpPort,Integer tcpPort) throws IOException{
         this.log = log;
         this.from = from;
         this.to = to;
         this.token = token;
         this.serverName = serverName;
+        this.httpPort = httpPort;
+        this.tcpPort = tcpPort;
 
         if(!reconnect())
             throw new IOException("Could not connect to Server");
@@ -66,6 +80,8 @@ public class IOTClient extends Thread{
         this.to = to;
         this.token = token;
         this.serverName = "iorcloud.ml";
+        this.httpPort = 8080;
+        this.tcpPort = 8000;
 
         if(!reconnect())
             throw new IOException("Could not connect to Server");
@@ -92,11 +108,10 @@ public class IOTClient extends Thread{
      * @return
      * @throws IOException
      */
-    private boolean reconnect() throws IOException{
-        String server = String.format("http://%s/IOT/dashboard/socket/subscribe/%s/%d/%d",serverName,token,from,to);
+    protected boolean reconnect() throws IOException{
+        String server = String.format("http://%s:%d/subscribe?uuid=%s&from=%d&to=%d",serverName,httpPort,token,from,to);
         HttpClient httpClient = HttpClients.createDefault();
         HttpPost postRequest = new HttpPost(server);
-        //HttpGet getRequest = new HttpGet(server);
         HttpResponse response = httpClient.execute(postRequest);
         int status = response.getStatusLine().getStatusCode();
         while(status == 404){
@@ -109,6 +124,7 @@ public class IOTClient extends Thread{
             }
             print(String.format("Server with address: %s not found",server));
         }
+        System.out.println(String.format("Response Status: %d",status));
 
         if(status != 201)
             throw new IOException("Invalid Credentials");
@@ -118,14 +134,14 @@ public class IOTClient extends Thread{
         reader.close();
         print(read);
 
-        print("Connecting to Server on port " + 8000);
+        print("Connecting to Server on port " + tcpPort);
         try {
             Thread.sleep(2 * 1000);
         }catch(InterruptedException e){
             e.printStackTrace();
         }
 
-        client = new Socket(serverName, 8000);
+        client = new Socket(serverName, tcpPort);
         print("Just connected to " + client.getRemoteSocketAddress());
         reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
@@ -139,7 +155,10 @@ public class IOTClient extends Thread{
             public void run() {
                 try {
                     while(true) {
-                        sendMessage("<HEARTBEAT>");
+                        synchronized (writer) {
+                            writer.newLine();
+                            writer.flush();
+                        }
                         Thread.sleep(delay);
                     }
 
@@ -159,8 +178,6 @@ public class IOTClient extends Thread{
      */
     public void close(){
         try {
-            reader.close();
-            writer.close();
             client.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -196,7 +213,7 @@ public class IOTClient extends Thread{
      * @param msg Socket Message, specifies the Message to be end to the server.
      * @throws IOException
      */
-    private void send(SocketMessage msg) throws IOException{
+    protected void send(SocketMessage msg) throws IOException{
         String data = gson.toJson(msg);
         print(data);
         synchronized (writer) {
@@ -208,7 +225,7 @@ public class IOTClient extends Thread{
     }
 
 
-    private void print(String message){
+    protected void print(String message){
         if(log)
             System.out.println(message);
     }
@@ -234,9 +251,10 @@ public class IOTClient extends Thread{
     }
 
     public void run() {
-        while(true){
+        while(!this.isTunneled && !this.isInterrupted()){
             try{
                 SocketMessage msg = readData();
+                print(String.valueOf(msg));
                 if(msg!=null){
                     if(msg.message.equals("<RECOGNISED>")) {
                         print("Connection Stable");
@@ -248,17 +266,19 @@ public class IOTClient extends Thread{
                         break;
                     }
                     if(readFunction != null) {
-                        readFunction.apply(msg);
+                        try{
+                            readFunction.apply(msg);
+                        }catch(Exception ex){ex.printStackTrace();}
                         this.sendMessage("ack");
                     }
                 }
 
             }catch(IOException e){
+                if(e instanceof SocketException)
+                    break;
                 e.printStackTrace();
-                break;
             }
         }
-        this.close();
     }
 
 
@@ -269,6 +289,8 @@ public class IOTClient extends Thread{
      */
     public SocketMessage readData()throws IOException{
         String dataString = reader.readLine();
+        if(dataString.length() < 1)
+            return null;
         SocketMessage msg = gson.fromJson(dataString,SocketMessage.class);
         return msg;
     }
