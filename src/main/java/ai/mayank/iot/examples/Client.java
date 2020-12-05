@@ -7,7 +7,7 @@ import java.util.List;
 public class Client{
     static IOTClient client1,client2;
     static long time;
-    final static String token = "5a5a83c3-2588-42fb-84bd-fa3129a2ac45";
+    final static String token = "a9b08f66-8e6f-4558-b251-da7163aac420";
     final static Integer from = 1234,to=789;
     static float freq;
     public static void main(String [] args) throws Exception {
@@ -25,10 +25,10 @@ public class Client{
         Thread.sleep(250);
         long i=0;
         while(i<20){
-            Thread.sleep(10);
+            Thread.sleep(5000);
             time = System.currentTimeMillis();
             System.out.println("Sending Message");
-            client1.sendMessage("Message from client 1 "  + i);
+            client1.sendMessage(String.valueOf(System.currentTimeMillis()));
             i++;
         }
         Thread.sleep(5000);
@@ -42,7 +42,7 @@ public class Client{
 
     public static Boolean onReceive(SocketMessage msg) {
         System.out.println("Message Received");
-        System.out.println("Message Received: " + msg.message);
+        System.out.println("Message Received: " + String.valueOf(System.currentTimeMillis() - Long.valueOf(msg.message)));
         System.out.println("Message status: " + msg.status);
         return true;
     }

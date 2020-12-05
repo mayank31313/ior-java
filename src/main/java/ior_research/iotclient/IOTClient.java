@@ -1,5 +1,7 @@
 package ior_research.iotclient;
 
+import ai.mayank.crypto.AESUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -23,7 +25,6 @@ public class IOTClient extends Thread implements  BaseClient{
     Logger logger = LoggerFactory.getLogger(IOTClient.class);
 
     public Socket client;
-    protected Gson gson = new Gson();
     protected Integer from,to;
     protected String token;
     protected Integer httpPort,tcpPort;
@@ -36,10 +37,14 @@ public class IOTClient extends Thread implements  BaseClient{
     private final Integer delay = 3000;
     private boolean log;
     protected Function<SocketMessage,Boolean> readFunction;
+    protected ObjectMapper mapper;
+    private AESUtils aesUtils = new AESUtils();
 
+    private String key = "1234567896541258";
     public static List<IOTClient> createRevertedClients(int from,int to,String token,boolean log,String server,int httpPort,int socketPort) throws IOException{
         IOTClient c1 = new IOTClient(from,to,token,log,server,httpPort,socketPort);
         IOTClient c2 = new IOTClient(to,from,token,log,server,httpPort,socketPort);
+        
         return Arrays.asList(new IOTClient[]{c1,c2});
     }
 
@@ -109,6 +114,7 @@ public class IOTClient extends Thread implements  BaseClient{
      * @throws IOException
      */
     protected boolean reconnect() throws IOException{
+        mapper = new ObjectMapper();
         String server = String.format("http://%s:%d/subscribe?uuid=%s&from=%d&to=%d",serverName,httpPort,token,from,to);
         HttpClient httpClient = HttpClients.createDefault();
         HttpPost postRequest = new HttpPost(server);
@@ -197,6 +203,7 @@ public class IOTClient extends Thread implements  BaseClient{
         send(msg);
     }
 
+
     /**
      * Sends the Heart Beat to the server in a duration of time
      * @throws IOException
@@ -213,9 +220,13 @@ public class IOTClient extends Thread implements  BaseClient{
      * @param msg Socket Message, specifies the Message to be end to the server.
      * @throws IOException
      */
-    protected void send(SocketMessage msg) throws IOException{
-        String data = gson.toJson(msg);
-        print(data);
+    public void send(SocketMessage msg) throws IOException{
+        String data = mapper.writeValueAsString(msg);
+        try {
+            data = this.aesUtils.encrypt(data, key);
+        }catch(Exception ex){
+            logger.error("Could not encrypt data");
+        }
         synchronized (writer) {
             writer.write(data);
             writer.newLine();
@@ -254,7 +265,6 @@ public class IOTClient extends Thread implements  BaseClient{
         while(!this.isTunneled && !this.isInterrupted()){
             try{
                 SocketMessage msg = readData();
-                print(String.valueOf(msg));
                 if(msg!=null){
                     if(msg.message.equals("<RECOGNISED>")) {
                         print("Connection Stable");
@@ -291,7 +301,8 @@ public class IOTClient extends Thread implements  BaseClient{
         String dataString = reader.readLine();
         if(dataString.length() < 1)
             return null;
-        SocketMessage msg = gson.fromJson(dataString,SocketMessage.class);
+        dataString = this.aesUtils.decrypt(dataString, key);
+        SocketMessage msg = mapper.readValue(dataString, SocketMessage.class);
         return msg;
     }
 
